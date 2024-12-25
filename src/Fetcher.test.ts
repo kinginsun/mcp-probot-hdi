@@ -1,6 +1,7 @@
 import { Fetcher } from "./Fetcher";
 import { JSDOM } from "jsdom";
-import TurndownService from "turndown";
+import { beforeEach } from "node:test";
+import Turndown from "turndown";
 
 global.fetch = jest.fn();
 
@@ -144,7 +145,7 @@ describe("Fetcher", () => {
       });
 
       const mockMarkdown = "# Hello World\n\nThis is a test paragraph.";
-      (TurndownService as jest.Mock).mockImplementationOnce(() => ({
+      (Turndown as jest.Mock).mockImplementationOnce(() => ({
         turndown: jest.fn().mockReturnValueOnce(mockMarkdown),
       }));
 
