@@ -17,6 +17,8 @@ A powerful MCP server for fetching and transforming web content into various for
 
 </div>
 
+<a href="https://glama.ai/mcp/servers/m2a0ue08n2"><img width="380" height="200" src="https://glama.ai/mcp/servers/m2a0ue08n2/badge" alt="NPX Fetch MCP server" /></a>
+
 ---
 
 ## 🚀 Features
