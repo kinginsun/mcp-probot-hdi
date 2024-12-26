@@ -1,13 +1,36 @@
 #!/usr/bin/env node
 
+// Add basic error handling
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  v,
 } from "@modelcontextprotocol/sdk/types.js";
 import { RequestPayloadSchema } from "./types.js";
 import { Fetcher } from "./Fetcher.js";
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  process.exit(1);
+});
+
+// Add input validation
+function validateUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const server = new Server(
   {
@@ -19,7 +42,7 @@ const server = new Server(
       resources: {},
       tools: {},
     },
-  },
+  }
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {

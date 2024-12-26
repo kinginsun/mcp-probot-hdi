@@ -4,9 +4,7 @@
   "description": "A CLI tool for fetching and processing content using the Model Context Protocol",
   "type": "module",
   "main": "dist/index.js",
-  "bin": {
-    "mcp-npx-fetch": "./dist/index.js"
-  },
+  "bin": "./dist/index.js",
   "homepage": "https://github.com/tokenizin-agency/mcp-npx-fetch",
   "repository": {
     "type": "git",
@@ -43,5 +41,13 @@
     "shx": "^0.3.4",
     "ts-jest": "^29.2.5",
     "typescript": "^5.7.2"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

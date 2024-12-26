@@ -141,7 +141,7 @@ npx @tokenizin/mcp-npx-fetch
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/mcp-npx-fetch.git
+git clone https://github.com/tokenizin-agency/mcp-npx-fetch.git
 cd mcp-npx-fetch
 ```
 
