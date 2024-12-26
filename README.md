@@ -36,6 +36,7 @@ A powerful MCP server for fetching and transforming web content into various for
 
 ```bash
 npm install -g @tokenizin/mcp-npx-fetch
+
 ```
 
 ### Direct Usage with NPX
