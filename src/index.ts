@@ -7,10 +7,9 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-  v,
 } from "@modelcontextprotocol/sdk/types.js";
-import { RequestPayloadSchema } from "./types.js";
 import { Fetcher } from "./Fetcher.js";
+import { RequestPayloadSchema } from "./types.js";
 
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
@@ -34,8 +33,8 @@ function validateUrl(url: string): boolean {
 
 const server = new Server(
   {
-    name: "zcaceres/fetch",
-    version: "0.1.0",
+    name: "@tokenizin/mcp-npx-fetch",
+    version: "0.13.37",
   },
   {
     capabilities: {
