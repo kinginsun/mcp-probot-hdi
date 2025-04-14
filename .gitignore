@@ -3,6 +3,9 @@ node_modules
 dist
 build
 
+.yarn/
+.github/workflows/
+
 # Dependencies
 node_modules
 .pnp
@@ -41,3 +44,4 @@ yarn-error.log*
 .pnpm-debug.log
 
 **/**.DS_Store
+*.json

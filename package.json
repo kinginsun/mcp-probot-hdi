@@ -1,30 +1,29 @@
 {
-  "name": "@tokenizin/mcp-npx-fetch",
-  "version": "1.0.0",
-  "description": "A CLI tool for fetching and processing content using the Model Context Protocol",
+  "name": "@kinginsun/mcp-probot-hdi",
+  "version": "0.0.1",
+  "description": "A CLI tool for checking drug-drug and herb-drug interactions using the Model Context Protocol",
   "type": "module",
   "main": "dist/index.js",
   "bin": "./dist/index.js",
-  "homepage": "https://github.com/tokenizin-agency/mcp-npx-fetch",
+  "homepage": "https://github.com/kinginsun/mcp-probot-hdi",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tokenizin-agency/mcp-npx-fetch.git"
+    "url": "https://github.com/kinginsun/mcp-probot-hdi.git"
   },
   "license": "MIT",
-  "author": "TokiDev (tokenizin.com)",
+  "author": "kinginsun@CUHK",
   "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
     "dev": "tsc --watch",
-    "start": "node dist/index.js",
-    "test": "jest"
+    "start": "node dist/index.js"
   },
   "keywords": [
     "mcp",
     "model-context-protocol",
     "cli",
-    "fetch",
-    "content-processing"
+    "drug-interaction",
+    "herb-drug-interaction"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",

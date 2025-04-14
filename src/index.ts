@@ -8,7 +8,6 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { Fetcher } from "./Fetcher.js";
 import { RequestPayloadSchema } from "./types.js";
 
 process.on("uncaughtException", (error) => {
@@ -21,20 +20,10 @@ process.on("unhandledRejection", (reason, promise) => {
   process.exit(1);
 });
 
-// Add input validation
-function validateUrl(url: string): boolean {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 const server = new Server(
   {
-    name: "@tokenizin/mcp-npx-fetch",
-    version: "0.13.37",
+    name: "mcp-probot-hdi",
+    version: "0.0.1",
   },
   {
     capabilities: {
@@ -48,76 +37,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: "fetch_html",
-        description: "Fetch a website and return the content as HTML",
-        inputSchema: {
-          type: "object",
-          properties: {
-            url: {
-              type: "string",
-              description: "URL of the website to fetch",
-            },
-            headers: {
-              type: "object",
-              description: "Optional headers to include in the request",
-            },
-          },
-          required: ["url"],
-        },
-      },
-      {
-        name: "fetch_markdown",
-        description: "Fetch a website and return the content as Markdown",
-        inputSchema: {
-          type: "object",
-          properties: {
-            url: {
-              type: "string",
-              description: "URL of the website to fetch",
-            },
-            headers: {
-              type: "object",
-              description: "Optional headers to include in the request",
-            },
-          },
-          required: ["url"],
-        },
-      },
-      {
-        name: "fetch_txt",
+        name: "drug_interaction",
         description:
-          "Fetch a website, return the content as plain text (no HTML)",
+          "Checks drug-drug or herb-drug interactions/combination usages between two drugs or herbs",
         inputSchema: {
           type: "object",
           properties: {
-            url: {
+            drug1: {
               type: "string",
-              description: "URL of the website to fetch",
+              description: "First drug name or herb name (required)",
             },
-            headers: {
-              type: "object",
-              description: "Optional headers to include in the request",
+            drug2: {
+              type: "string",
+              description: "Second drug name or herb name (optional)",
             },
           },
-          required: ["url"],
-        },
-      },
-      {
-        name: "fetch_json",
-        description: "Fetch a JSON file from a URL",
-        inputSchema: {
-          type: "object",
-          properties: {
-            url: {
-              type: "string",
-              description: "URL of the JSON to fetch",
-            },
-            headers: {
-              type: "object",
-              description: "Optional headers to include in the request",
-            },
-          },
-          required: ["url"],
+          required: ["drug1"],
         },
       },
     ],
@@ -129,21 +64,47 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   const validatedArgs = RequestPayloadSchema.parse(args);
 
-  if (request.params.name === "fetch_html") {
-    const fetchResult = await Fetcher.html(validatedArgs);
-    return fetchResult;
-  }
-  if (request.params.name === "fetch_json") {
-    const fetchResult = await Fetcher.json(validatedArgs);
-    return fetchResult;
-  }
-  if (request.params.name === "fetch_txt") {
-    const fetchResult = await Fetcher.txt(validatedArgs);
-    return fetchResult;
-  }
-  if (request.params.name === "fetch_markdown") {
-    const fetchResult = await Fetcher.markdown(validatedArgs);
-    return fetchResult;
+  if (request.params.name === "drug_interaction") {
+    const apiKey = process.env.PROBOT_API_KEY;
+    if (!apiKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "PROBOT_API_KEY environment variable is not set",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const response = await fetch("https://db.drugsea.cn/api2/g/mcp/probot", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(validatedArgs),
+    });
+
+    const data = await response.json();
+    const { api_status, content } = data;
+    if (!api_status) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [{ type: "text", text: JSON.stringify(content) }],
+      isError: false,
+    };
   }
   throw new Error("Tool not found");
 });
