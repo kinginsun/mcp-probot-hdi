@@ -23,7 +23,7 @@ process.on("unhandledRejection", (reason, promise) => {
 const server = new Server(
   {
     name: "mcp-probot-hdi",
-    version: "0.0.1",
+    version: "0.0.5",
   },
   {
     capabilities: {
@@ -37,7 +37,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: "drug_interaction",
+        name: "Retrieve_HDI_from_Probot",
         description:
           "Checks drug-drug or herb-drug interactions/combination usages between two drugs or herbs",
         inputSchema: {
@@ -64,7 +64,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   const validatedArgs = RequestPayloadSchema.parse(args);
 
-  if (request.params.name === "drug_interaction") {
+  if (request.params.name === "Retrieve_HDI_from_Probot") {
     const apiKey = process.env.PROBOT_API_KEY;
     if (!apiKey) {
       return {

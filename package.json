@@ -1,14 +1,16 @@
 {
   "name": "@kinginsun/mcp-probot-hdi",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "description": "A CLI tool for checking drug-drug and herb-drug interactions using the Model Context Protocol",
   "type": "module",
   "main": "dist/index.js",
-  "bin": "./dist/index.js",
+  "bin": {
+    "mcp-probot-hdi": "dist/index.js"
+  },
   "homepage": "https://github.com/kinginsun/mcp-probot-hdi",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kinginsun/mcp-probot-hdi.git"
+    "url": "git+https://github.com/kinginsun/mcp-probot-hdi.git"
   },
   "license": "MIT",
   "author": "kinginsun@CUHK",

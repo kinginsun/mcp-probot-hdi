@@ -1,0 +1,25 @@
+version: 1
+servers:
+  drug-interaction:
+    type: stdio
+    command:
+      args:
+        - npx
+        - "@kinginsun/mcp-probot-hdi"
+      env:
+        PROBOT_API_KEY: ${PROBOT_API_KEY}
+    capabilities:
+      tools:
+        drug_interaction:
+          description: Checks drug-drug or herb-drug interactions/combination usages between two drugs or herbs
+          schema:
+            type: object
+            properties:
+              drug1:
+                type: string
+                description: First drug name or herb name (required)
+              drug2:
+                type: string
+                description: Second drug name or herb name (optional)
+            required:
+              - drug1

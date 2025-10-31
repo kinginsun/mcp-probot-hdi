@@ -1,0 +1,11 @@
+version: 1
+tools:
+  drug_interaction:
+    type: stdio
+    command: ["node", "dist/index.js"]
+    env:
+      PROBOT_API_KEY: "${PROBOT_API_KEY}"
+    capabilities:
+      - drug_interaction
+    timeout: 30000
+    description: "Drug and herb interaction checker"
