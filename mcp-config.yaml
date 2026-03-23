@@ -1,11 +1,7 @@
-version: 1
-tools:
-  drug_interaction:
-    type: stdio
-    command: ["node", "dist/index.js"]
+mcpServers:
+  probot-hdi:
+    command: npx
+    args:
+      - "@kinginsun/mcp-probot-hdi"
     env:
-      PROBOT_API_KEY: "${PROBOT_API_KEY}"
-    capabilities:
-      - drug_interaction
-    timeout: 30000
-    description: "Drug and herb interaction checker"
+      PROBOT_API_KEY: ${PROBOT_API_KEY}
