@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
+import { createHash } from "node:crypto";
+import os from "node:os";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import {
-  HdiByNameSchema,
-  SearchItemSchema,
-  HdiByIdSchema,
-} from "./types.js";
+import { HdiByNameSchema, SearchItemSchema, HdiByIdSchema } from "./types.js";
+
+const PACKAGE_VERSION = "0.0.8";
 
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
@@ -22,29 +22,74 @@ process.on("unhandledRejection", (reason, promise) => {
   process.exit(1);
 });
 
-const API_BASE = "https://db.drugsea.cn/api2/g/mcp";
+/** 默認指向 Cancer Probot；可設 PROBOT_HDI_API_BASE 覆蓋（勿尾隨斜杠） */
+const API_BASE = (
+  process.env.PROBOT_HDI_API_BASE || "https://cancer.probot.hk/probot_api/mcp"
+).replace(/\/$/, "");
 
-function getApiKey(): string {
-  const apiKey = process.env.PROBOT_API_KEY;
-  if (!apiKey) {
-    throw new Error("PROBOT_API_KEY environment variable is not set");
+/** 個人中心生成的 pb-… Token，與後端 Authorization: Bearer 一致 */
+function getBearerToken(): string {
+  const token = process.env.PROBOT_MCP_TOKEN || "";
+  if (!token) {
+    throw new Error(
+      "Set PROBOT_MCP_TOKEN to your pb-… token from the account center",
+    );
   }
-  return apiKey;
+  if (!token.startsWith("pb-")) {
+    throw new Error(
+      "MCP token must start with pb- (create one in your personal center)",
+    );
+  }
+  return token;
+}
+
+/** 進程內緩存，同一運行期內穩定 */
+let environmentFingerprintCache: string | null = null;
+
+/**
+ * 基於本機環境生成 SHA-256 指紋（主機名僅以哈希混入，請求中不帶主機名明文）。
+ * 僅作觀測/輔助用途，不能替代 Token 鑑權。
+ */
+function getEnvironmentFingerprint(): string {
+  if (environmentFingerprintCache !== null) {
+    return environmentFingerprintCache;
+  }
+  const hostDigest = createHash("sha256")
+    .update(os.hostname(), "utf8")
+    .digest("hex");
+  const raw = [
+    "mcp-probot-hdi",
+    PACKAGE_VERSION,
+    process.platform,
+    process.arch,
+    process.version,
+    os.type(),
+    os.release(),
+    hostDigest,
+  ].join("\0");
+  environmentFingerprintCache = createHash("sha256")
+    .update(raw, "utf8")
+    .digest("hex");
+  return environmentFingerprintCache;
 }
 
 async function callApi(endpoint: string, body: Record<string, unknown>) {
-  const apiKey = getApiKey();
+  const bearer = getBearerToken();
   const response = await fetch(`${API_BASE}/${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${bearer}`,
+      "X-Probot-Env-Fingerprint": getEnvironmentFingerprint(),
+      "X-Probot-Client-Version": PACKAGE_VERSION,
     },
     body: JSON.stringify(body),
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `API request failed: ${response.status} ${response.statusText}`,
+    );
   }
 
   return response.json();
@@ -53,14 +98,14 @@ async function callApi(endpoint: string, body: Record<string, unknown>) {
 const server = new Server(
   {
     name: "mcp-probot-hdi",
-    version: "0.0.6",
+    version: PACKAGE_VERSION,
   },
   {
     capabilities: {
       resources: {},
       tools: {},
     },
-  }
+  },
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {

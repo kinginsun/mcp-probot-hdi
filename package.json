@@ -1,6 +1,6 @@
 {
   "name": "@kinginsun/mcp-probot-hdi",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "A CLI tool for checking drug-drug and herb-drug interactions using the Model Context Protocol",
   "type": "module",
   "main": "dist/index.js",

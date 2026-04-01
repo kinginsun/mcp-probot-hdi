@@ -11,7 +11,7 @@ npm install -g @kinginsun/mcp-probot-hdi
 2. 设置环境变量:
 
 ```bash
-export PROBOT_API_KEY=your_api_key_here
+export PROBOT_MCP_TOKEN=pb-your_token_here
 ```
 
 3. 使用 mcpServers 配置文件:
@@ -34,7 +34,7 @@ servers:
         - npx
         - "@kinginsun/mcp-probot-hdi"
       env:
-        PROBOT_API_KEY: ${PROBOT_API_KEY}
+        PROBOT_MCP_TOKEN: ${PROBOT_MCP_TOKEN}
     capabilities:
       tools:
         drug_interaction:
@@ -93,12 +93,12 @@ mcp --servers mcpServers.yaml
 2. 直接通过管道运行:
 
 ```bash
-echo '{"jsonrpc":"2.0","id":1,"method":"listTools","params":{}}' | PROBOT_API_KEY=your_api_key_here npx @kinginsun/mcp-probot-hdi
+echo '{"jsonrpc":"2.0","id":1,"method":"listTools","params":{}}' | PROBOT_MCP_TOKEN=pb-your_token_here npx @kinginsun/mcp-probot-hdi
 ```
 
 ## 注意事项
 
 1. 确保已全局安装 @kinginsun/mcp-probot-hdi 包
-2. 确保环境变量 PROBOT_API_KEY 已正确设置
+2. 确保环境变量 PROBOT_MCP_TOKEN（`pb-…` 个人中心令牌）已正确设置
 3. 工具支持药物-药物和草药-药物相互作用查询
 4. YAML 格式相比 JSON 更易读，但要注意保持正确的缩进

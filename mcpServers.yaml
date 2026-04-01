@@ -4,4 +4,4 @@ mcpServers:
     args:
       - "@kinginsun/mcp-probot-hdi"
     env:
-      PROBOT_API_KEY: ${PROBOT_API_KEY}
+      PROBOT_MCP_TOKEN: ${PROBOT_MCP_TOKEN}
