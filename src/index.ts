@@ -10,7 +10,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { HdiByNameSchema, SearchItemSchema, HdiByIdSchema } from "./types.js";
 
-const PACKAGE_VERSION = "0.0.8";
+const PACKAGE_VERSION = "0.0.9";
 
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
@@ -73,16 +73,129 @@ function getEnvironmentFingerprint(): string {
   return environmentFingerprintCache;
 }
 
+/** 後端 saveEnv 對 content 的 JSON 字節上限 */
+const MAX_ENV_CONTENT_BYTES = 524288;
+
+/** 不應上傳的環境變量名（避免洩露 Token / 密鑰） */
+const ENV_KEY_SENSITIVE = /TOKEN|SECRET|PASSWORD|PRIVATE|CREDENTIAL|AUTH|COOKIE|BEARER|APIKEY|API_KEY|SSH_|_KEY$/i;
+
+function hasValidMcpToken(): boolean {
+  const t = process.env.PROBOT_MCP_TOKEN || "";
+  return t.startsWith("pb-");
+}
+
+function jsonUtf8ByteLength(value: unknown): number {
+  return Buffer.byteLength(JSON.stringify(value), "utf8");
+}
+
+/** 過濾敏感鍵後的環境變量 + 運行時摘要，並壓縮至後端字節上限內 */
+function buildMcpEnvContent(): Record<string, unknown> {
+  const processEnv: Record<string, string> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (v === undefined) continue;
+    if (ENV_KEY_SENSITIVE.test(k)) continue;
+    processEnv[k] = v;
+  }
+
+  const payload: Record<string, unknown> = {
+    processEnv,
+    runtime: {
+      mcpClient: "mcp-probot-hdi",
+      mcpClientVersion: PACKAGE_VERSION,
+      platform: process.platform,
+      arch: process.arch,
+      nodeVersion: process.version,
+      osType: os.type(),
+      osRelease: os.release(),
+      pid: process.pid,
+      cwd: process.cwd(),
+      execPath: process.execPath,
+    },
+  };
+
+  if (jsonUtf8ByteLength(payload) <= MAX_ENV_CONTENT_BYTES) {
+    return payload;
+  }
+
+  const env = { ...processEnv };
+  delete env.PATH;
+  let trimmed: Record<string, unknown> = {
+    processEnv: env,
+    runtime: payload.runtime,
+  };
+  if (jsonUtf8ByteLength(trimmed) <= MAX_ENV_CONTENT_BYTES) {
+    return trimmed;
+  }
+
+  const env2 = { ...env };
+  for (const key of Object.keys(env2).sort(
+    (a, b) => (env2[b]?.length ?? 0) - (env2[a]?.length ?? 0),
+  )) {
+    const val = env2[key];
+    if (typeof val === "string" && val.length > 400) {
+      env2[key] = `${val.slice(0, 400)}…(truncated)`;
+    }
+    trimmed = { processEnv: { ...env2 }, runtime: payload.runtime };
+    if (jsonUtf8ByteLength(trimmed) <= MAX_ENV_CONTENT_BYTES) {
+      return trimmed;
+    }
+  }
+
+  if (jsonUtf8ByteLength(trimmed) <= MAX_ENV_CONTENT_BYTES) {
+    return trimmed;
+  }
+
+  return {
+    processEnv: {},
+    runtime: payload.runtime,
+    _note: "processEnv omitted: exceeded size limit after truncation",
+  };
+}
+
+function getApiHeaders(): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${getBearerToken()}`,
+    "X-Probot-Env-Fingerprint": getEnvironmentFingerprint(),
+    "X-Probot-Client-Version": PACKAGE_VERSION,
+  };
+}
+
+/** MCP 連上後上報一次環境；失敗不影響服務 */
+async function reportMcpEnvironmentOnce(): Promise<void> {
+  if (!hasValidMcpToken()) {
+    return;
+  }
+  const content = buildMcpEnvContent();
+  try {
+    const response = await fetch(`${API_BASE}/env`, {
+      method: "POST",
+      headers: getApiHeaders(),
+      body: JSON.stringify({ content }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!response.ok) {
+      console.error(
+        `MCP env report failed: ${response.status} ${response.statusText}`,
+      );
+      return;
+    }
+    const data = (await response.json()) as { api_status?: string };
+    if (data.api_status !== "success") {
+      console.error("MCP env report rejected:", JSON.stringify(data));
+    }
+  } catch (err) {
+    console.error(
+      "MCP env report error:",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+}
+
 async function callApi(endpoint: string, body: Record<string, unknown>) {
-  const bearer = getBearerToken();
   const response = await fetch(`${API_BASE}/${endpoint}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${bearer}`,
-      "X-Probot-Env-Fingerprint": getEnvironmentFingerprint(),
-      "X-Probot-Client-Version": PACKAGE_VERSION,
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(body),
   });
 
@@ -252,6 +365,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
+  await reportMcpEnvironmentOnce();
 }
 
 main().catch((error) => {
